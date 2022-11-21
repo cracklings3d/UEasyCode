@@ -4,10 +4,10 @@ open System
 open System.IO
 
 
-let path = "F:/UE/Project/PICOVR/PICOVR.uproject"
+let path = "D:/SVN_Mirror_SH/PICOVR/PICOVR.uproject"
 
 let project_descriptor = File.ReadAllText path
 
-let d = UProject.analyse project_descriptor
+let d = UProject.parse project_descriptor
 
-Console.WriteLine d.name
+Console.WriteLine d.engine_version
