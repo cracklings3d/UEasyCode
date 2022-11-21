@@ -5,9 +5,6 @@ open System.Text.RegularExpressions
 open Newtonsoft.Json.Linq
 
 
-module Say =
-  let hello name = printfn $"Hello %s{name}"
-
 module UProject =
   type EngineVersion =
     | LauncherInstall of version : Version
@@ -34,6 +31,14 @@ module UProject =
       dependencies : string seq
     }
 
+  type Plugin =
+    {
+      name : string
+      enabled : bool
+      supported_platforms : Platform
+      marketplace_url : string option
+    }
+
   type UProjectDescriptor =
     {
       supported_platforms : Platform
@@ -51,26 +56,35 @@ module UProject =
     match j_loading_phase with
     | "Default" -> Default
     | _ -> failwith "Invalid loading phase"
-
-  // let parse_string_token (j_string : JToken) : string = j_string.Value<string> j_string
-  //
-  // let parse_string_list (j_string_list : JToken) : string seq =
-  //   j_string_list.Values<string>
+    
+  let parse_platforms (str_list: string seq): Platform =
+    let ccccc = if Seq.contains "Win64" then Platform.Win64 else Platform.Win32
+    Platform.Win64
 
   let parse_module (j_module : JToken) =
     {
       name = j_module.Value<string> "Name"
       type_ = parse_module_type (j_module.Value<string> "Type")
       loading_phase = parse_module_loading_phase (j_module.Value<string> "LoadingPhase")
-      dependencies = j_module.Values<string> "AdditionalDependencies"
+      dependencies = (j_module.Value<JToken> "AdditionalDependencies").Values<string> ()
     }
 
+  let parse_plugin (j_plugin : JToken) =
+    {
+      name = j_plugin.Value<string> "Name"
+      enabled = j_plugin.Value<bool> "Enabled"
+      supported_platforms = parse_platforms (j_module.Value<string> "LoadingPhase")
+      marketplace_url = None
+    }
 
   let parse (descriptor : string) : UProjectDescriptor =
     let j = JObject.Parse descriptor
 
     let _ver = j.Value<string> "EngineAssociation"
-    let regex_launcher_install = Regex ("\d\.\d+", RegexOptions.Compiled)
+
+    let regex_launcher_install =
+      Regex ("\d\.\d+", RegexOptions.Compiled)
+
     let regex_source_build = Regex ("{.*}", RegexOptions.Compiled)
 
     let ver : EngineVersion =
@@ -83,7 +97,7 @@ module UProject =
         failwith "Invalid version string."
 
     {
-      supported_platforms = Platform.Win64
+      supported_platforms = Platform.Win64 ||| Platform.Linux
       engine_version = ver
       modules = Seq.map parse_module (j.Value<JToken> "Modules")
     }

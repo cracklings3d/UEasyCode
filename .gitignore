@@ -1,5 +1,7 @@
 ﻿.idea
 .vs
 
+Test.fs
+
 bin/
 obj/
